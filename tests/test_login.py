@@ -90,25 +90,57 @@ def test_login_fail_wrong_password(page, test_config):
            (*Assert: URL vẫn ở trang đăng nhập HOẶC có thông báo lỗi*)
     """
     # TODO: Students implement here (Sinh viên viết code ở đây)
-    pytest.skip("Not implemented — student must complete (Chưa hoàn thành)")
+    
+    page.goto(test_config["base_url"], wait_until="networkidle", timeout=60000)
+    enable_flutter_semantics(page)
+    
+    flutter_fill(page, "Email", test_config["email"])
+    flutter_fill(page, "Mật khẩu", "wrongpassword")
+    flutter_click_button(page, "Đăng nhập")
+    
+    wait_for_flutter(page, text="Đăng nhập")
+    
+    page.screenshot(path=os.path.join(SCREENSHOT_DIR, "login_fail_wrong_password.png"))
+    
+    sem_text = " ".join(page.locator("flt-semantics").all_text_contents())
+    has_user_name = test_config["display_name"] in sem_text
+    has_logout = "Đăng xuất" in sem_text or "Logout" in sem_text
+    assert not has_user_name and not has_logout, \
+        f"Security risk: User '{test_config['display_name']}' was logged in even with a wrong password! " \
+        f"(Rủi ro bảo mật: Tài khoản vẫn đăng nhập thành công dù nhập sai mật khẩu)"
 
 
-def test_login_fail_empty_fields(page, test_config):
-    """TC-03: Login fail – empty fields (*Đăng nhập thất bại – để trống các trường*)
-
-    🔴 NOT COMPLETED — Students must implement this test case.
-    (*CHƯA HOÀN THÀNH — Sinh viên cần viết code cho test case này.*)
-
-    Description (*Mô tả*):
-        Leave all fields empty, click Login → system stays on login page.
-        (*Không nhập gì, bấm Đăng nhập → hệ thống không chuyển trang.*)
-
-    Suggested steps (*Gợi ý các bước*):
-        1. Navigate to login page (*Truy cập trang đăng nhập*)
-        2. Enable Flutter semantics (*Bật Flutter semantics*)
-        3. Do NOT enter Email/Password — click "Đăng nhập" immediately
-           (*KHÔNG nhập Email/Mật khẩu — click "Đăng nhập" ngay*)
-        4. Assert: URL still on login page (*Assert: URL vẫn ở trang đăng nhập*)
-    """
-    # TODO: Students implement here (Sinh viên viết code ở đây)
-    pytest.skip("Not implemented — student must complete (Chưa hoàn thành)")
+@pytest.mark.parametrize("email, password, should_pass, tc_id", [
+            ("ba.nguyen@email.com", "wrongpass", False, "TC-01"),
+            ("Ba.nguyen@email.com", "password123", True, "TC-05"),
+            ("", "", False, "TC-03"),
+])
+def test_login_fail(page, test_config, email, password, should_pass, tc_id):
+    target_email = test_config["email"] if email == "valid_email_placeholder" else email
+    page.goto(test_config["base_url"], wait_until="networkidle", timeout=60000)
+    enable_flutter_semantics(page)
+    
+    flutter_fill(page, "Email", target_email)
+    flutter_fill(page, "Mật khẩu", password)
+    flutter_click_button(page, "Đăng nhập")
+    
+    if should_pass:
+        wait_for_flutter(page, text="Đăng xuất")  
+    else:
+        wait_for_flutter(page, text="Đăng nhập")  
+    
+    status_str = "success" if should_pass else "fail"
+    page.screenshot(path=os.path.join(SCREENSHOT_DIR, f"login_{status_str}_{tc_id}.png"))
+    
+    sem_text = " ".join(page.locator("flt-semantics").all_text_contents())
+    has_user_name = test_config["display_name"] in sem_text
+    has_logout = "Đăng xuất" in sem_text or "Logout" in sem_text
+    
+    if should_pass:
+        assert has_user_name or has_logout, \
+            f"[{tc_id}] Error: Login should succeed but failed! " \
+            f"(Đăng nhập nên thành công nhưng lại thất bại)"
+    else:
+        assert not has_user_name and not has_logout, \
+            f"[{tc_id}] Critical: Login should fail but succeeded! " \
+            f"(Đăng nhập nên thất bại nhưng lại thành công — Rủi ro bảo mật)"
