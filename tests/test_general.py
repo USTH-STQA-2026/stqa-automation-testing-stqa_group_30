@@ -17,7 +17,6 @@ Hints (*Gợi ý*):
 """
 import os
 import time
-import pytest
 from conftest import (
     enable_flutter_semantics, flutter_fill, flutter_click_button,
     login, SCREENSHOT_DIR, smart_click, wait_for_flutter,
@@ -77,18 +76,13 @@ def test_switch_language_to_english(page, test_config):
         4. Get sem_text = " ".join(page.locator("flt-semantics").all_text_contents())
         5. Assert: "Logout" or "Borrow" or "Library" in sem_text
     """
-    # ============================================================================
-    # 1️⃣ ARRANGE — Đăng nhập
-    # ============================================================================
     page.goto(test_config["base_url"], wait_until="networkidle", timeout=60000)
     enable_flutter_semantics(page)
     login(page, test_config)
     
-    # Chờ trang tải xong (thấy nút Đăng xuất tiếng Việt)
     from conftest import wait_for_flutter
     wait_for_flutter(page, text="Đăng xuất")
     
-
     flutter_click_button(page, "EN")
     
     time.sleep(2)
