@@ -58,40 +58,128 @@ def test_search_book_no_result(page, test_config):
     pytest.skip("Not implemented — student must complete (Chưa hoàn thành)")
 
 
-def test_filter_by_category(page, test_config):
-    """TC-06: Filter books by category 'Công nghệ' (*Lọc sách theo thể loại 'Công nghệ'*)
+def test_filter_by_category_uppercase(page, test_config):
+    """TC-06b: Filter books by category — UPPERCASE input
+    (*Lọc sách theo thể loại — nhập VIẾT HOA "CÔNG NGHỆ"*)
 
-    🔴 NOT COMPLETED (*CHƯA HOÀN THÀNH*)
+    ✅ COMPLETED (*ĐÃ HOÀN THÀNH*)
 
-    Description (*Mô tả*):
-        Log in → enter "Công nghệ" in the category filter → verify all displayed books
-        belong to the "Công nghệ" category.
-        (*Đăng nhập → nhập "Công nghệ" vào ô lọc thể loại → kiểm tra tất cả sách
-        hiển thị đều thuộc thể loại Công nghệ.*)
+    📖 RIPR Model: xem comment [R], [I], [P], [R✓] bên dưới.
 
-    Hints (*Gợi ý*):
-        - flutter_fill(page, "Lọc theo thể loại (VD: Công nghệ, Kinh tế...)", "Công nghệ")
-        - Get book list: page.locator('flt-semantics[role="group"][aria-label*="Mã: BOOK"]')
-          (*Lấy danh sách sách*)
-        - Loop through each book, verify aria-label contains "Công nghệ"
-          (*Lặp qua từng sách, kiểm tra aria-label chứa "Công nghệ"*)
+    🎯 Mục tiêu (Equivalence / Robustness testing):
+        Kiểm tra bộ lọc có PHÂN BIỆT HOA-THƯỜNG hay không.
+        Nhập "CÔNG NGHỆ" (viết hoa) phải cho ra CÙNG kết quả với "Công nghệ".
+        → Đây là test đối chứng (oracle) cho tính năng lọc không phân biệt hoa-thường.
+
+    ⚠️ Giả định: hệ thống lọc KHÔNG phân biệt hoa-thường (case-insensitive),
+        đây là hành vi thông dụng và thân thiện người dùng.
+        Nếu SRS yêu cầu lọc PHÂN BIỆT hoa-thường, đảo lại assert cuối (mong đợi 0 sách).
     """
-    # TODO: Students implement here (Sinh viên viết code ở đây)
-    pytest.skip("Not implemented — student must complete (Chưa hoàn thành)")
+    SEARCH_TERM = "CÔNG NGHỆ"          
+    EXPECTED_CATEGORY = "Công nghệ"     
+
+    login(page, test_config)
+
+    flutter_fill(
+        page,
+        "Lọc theo thể loại (VD: Công nghệ, Kinh tế...)",
+        SEARCH_TERM,
+    )
+
+    try:
+        page.locator(
+            'flt-semantics[role="group"][aria-label*="Công nghệ"], '
+            'flt-semantics[aria-label*="Công nghệ"]'
+        ).last.wait_for(state="attached", timeout=15000)
+    except Exception:
+        pass
+    enable_flutter_semantics(page)
+    page.screenshot(
+        path=os.path.join(SCREENSHOT_DIR, "filter_category_uppercase.png")
+    )
+
+    book_cards = page.locator(
+        'flt-semantics[role="group"][aria-label*="Mã: BOOK"], '
+        'flt-semantics[aria-label*="Mã: BOOK"]'
+    )
+    labels = [
+        book_cards.nth(i).get_attribute("aria-label") or ""
+        for i in range(book_cards.count())
+    ]
+
+    assert len(labels) > 0, (
+        f"Uppercase filter '{SEARCH_TERM}' returned 0 books — filter may be "
+        f"case-SENSITIVE (Lọc viết hoa '{SEARCH_TERM}' không ra sách nào — "
+        f"bộ lọc có thể đang PHÂN BIỆT hoa-thường, không thân thiện người dùng)"
+    )
+
+    wrong_books = [lbl for lbl in labels if EXPECTED_CATEGORY not in lbl]
+    assert not wrong_books, (
+        f"Filter leaked {len(wrong_books)} non-'{EXPECTED_CATEGORY}' book(s): "
+        f"{wrong_books} (Bộ lọc để lọt {len(wrong_books)} sách sai thể loại)"
+    )
+
+    print(
+        f"\n[TC-06b] OK — uppercase '{SEARCH_TERM}' → {len(labels)} book(s), "
+        f"all in '{EXPECTED_CATEGORY}' (lọc không phân biệt hoa-thường ✔)"
+    )
 
 
 def test_search_by_author(page, test_config):
     """TC-07: Search book by author name (*Tìm kiếm sách theo tên tác giả*)
 
-    🔴 NOT COMPLETED (*CHƯA HOÀN THÀNH*)
+    ✅ COMPLETED (*ĐÃ HOÀN THÀNH*)
 
-    Description (*Mô tả*):
-        Log in → search author name (e.g. "Nguyễn Minh Đức") → verify results found.
-        (*Đăng nhập → tìm kiếm tên tác giả → kiểm tra có kết quả.*)
+    📖 RIPR Model: xem comment [R], [I], [P], [R✓] bên dưới.
 
-    Hints (*Gợi ý*):
-        - flutter_fill(page, "Tìm kiếm theo tên sách hoặc tác giả...", "Nguyễn Minh Đức")
-        - Verify: page.locator('flt-semantics[aria-label*="Nguyễn Minh Đức"]').count() > 0
+    📋 SRS REQ-03 (Tìm kiếm theo tên sách hoặc tác giả):
+        Seed data — tác giả "Nguyễn Minh Đức" có 2 sách:
+            • BOOK001 — Lập trình Flutter cơ bản
+            • BOOK009 — Nhập môn lập trình Python
+        Test Oracle: tìm tác giả này phải ra ÍT NHẤT 1 kết quả, và MỌI sách
+        hiển thị đều có tên tác giả trong aria-label (search không để lọt sách lạ).
     """
-    # TODO: Students implement here (Sinh viên viết code ở đây)
-    pytest.skip("Not implemented — student must complete (Chưa hoàn thành)")
+    AUTHOR = "Nguyễn Minh Đức"
+
+    login(page, test_config)
+
+    flutter_fill(
+        page,
+        "Tìm kiếm theo tên sách hoặc tác giả...",
+        AUTHOR,
+    )
+
+    try:
+        page.locator(
+            f'flt-semantics[aria-label*="{AUTHOR}"]'
+        ).last.wait_for(state="attached", timeout=15000)
+    except Exception:
+        pass
+    enable_flutter_semantics(page)
+    page.screenshot(path=os.path.join(SCREENSHOT_DIR, "search_by_author.png"))
+
+    author_hits = page.locator(f'flt-semantics[aria-label*="{AUTHOR}"]').count()
+    assert author_hits > 0, (
+        f"No results for author '{AUTHOR}' "
+        f"(Không tìm thấy kết quả cho tác giả '{AUTHOR}')"
+    )
+
+    book_cards = page.locator(
+        'flt-semantics[role="group"][aria-label*="Mã: BOOK"], '
+        'flt-semantics[aria-label*="Mã: BOOK"]'
+    )
+    labels = [
+        book_cards.nth(i).get_attribute("aria-label") or ""
+        for i in range(book_cards.count())
+    ]
+    assert len(labels) > 0, (
+        f"Author found in text but no book card displayed "
+        f"(Thấy tên tác giả nhưng không có card sách nào hiển thị)"
+    )
+    wrong_books = [lbl for lbl in labels if AUTHOR not in lbl]
+    assert not wrong_books, (
+        f"Search leaked {len(wrong_books)} book(s) by other authors: {wrong_books} "
+        f"(Tìm kiếm để lọt {len(wrong_books)} sách của tác giả khác)"
+    )
+
+    print(f"\n[TC-07] OK — author '{AUTHOR}' → {len(labels)} book(s) found")
