@@ -60,5 +60,37 @@ def test_switch_language_to_english(page, test_config):
         4. Get sem_text = " ".join(page.locator("flt-semantics").all_text_contents())
         5. Assert: "Logout" or "Borrow" or "Library" in sem_text
     """
-    # TODO: Students implement here (Sinh viên viết code ở đây)
-    pytest.skip("Not implemented — student must complete (Chưa hoàn thành)")
+    # ============================================================================
+    # 1️⃣ ARRANGE — Đăng nhập
+    # ============================================================================
+    page.goto(test_config["base_url"], wait_until="networkidle", timeout=60000)
+    enable_flutter_semantics(page)
+    login(page, test_config)
+    
+    # Chờ trang tải xong (thấy nút Đăng xuất tiếng Việt)
+    from conftest import wait_for_flutter
+    wait_for_flutter(page, text="Đăng xuất")
+    
+
+    flutter_click_button(page, "EN")
+    
+    time.sleep(2)
+    
+    
+    enable_flutter_semantics(page)
+    
+    all_text = " ".join(page.locator("flt-semantics").all_text_contents())
+    
+    
+    english_keywords = ["Logout", "Borrow", "Search", "Library", "Available"]
+    
+    
+    found_english = any(keyword in all_text for keyword in english_keywords)
+    
+    assert found_english, \
+        f"Language switch failed! Expected English keywords not found. " \
+        f"Got text: {all_text[:300]}"
+    
+    
+    page.screenshot(path=os.path.join(SCREENSHOT_DIR, "language_english.png"))
+
